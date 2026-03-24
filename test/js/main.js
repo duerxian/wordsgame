@@ -1,6 +1,7 @@
 const API_BASE_URL = 'http://localhost:5000/api/words';
 let words = [];
 let currentEditId = null;
+let currentTooltipWord = null;
 
 // 模拟数据，用于测试语言筛选功能
 const mockWords = [
@@ -101,12 +102,20 @@ function initDragAndDrop() {
         card.setAttribute('draggable', 'true');
         card.addEventListener('dragstart', handleDragStart);
         card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('click', handleWordClick);
     });
     
     const wordSections = document.querySelectorAll('.word-section');
     wordSections.forEach(section => {
         section.addEventListener('dragover', handleDragOver);
         section.addEventListener('drop', handleDrop);
+    });
+    
+    // 点击空白处隐藏浮动框
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.word-card') && !e.target.closest('.word-tooltip')) {
+            hideWordTooltip();
+        }
     });
 }
 
@@ -379,5 +388,39 @@ document.getElementById('wordInput').addEventListener('keypress', function(e) {
         saveWord();
     }
 });
+
+function handleWordClick(e) {
+    e.stopPropagation();
+    const card = this;
+    const wordId = parseInt(card.dataset.id);
+    const word = words.find(w => w.id === wordId);
+    if (!word) return;
+    
+    // 获取单词框的位置
+    const rect = card.getBoundingClientRect();
+    // 显示浮动框，左对齐单词框，间距8像素
+    showWordTooltip(word, rect.left, rect.bottom + 8);
+    currentTooltipWord = word;
+}
+
+function showWordTooltip(word, x, y) {
+    const tooltip = document.getElementById('wordTooltip');
+    document.getElementById('tooltip-meaning').textContent = word.meaning || '无';
+    document.getElementById('tooltip-pos').textContent = word.pos || '无';
+    document.getElementById('tooltip-phonetic').textContent = word.phonetic || '无';
+    document.getElementById('tooltip-example').textContent = word.example || '无';
+    document.getElementById('tooltip-related').textContent = word.related || '无';
+    
+    // 设置浮动框位置紧贴单词框下方
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+    tooltip.style.display = 'block';
+}
+
+function hideWordTooltip() {
+    const tooltip = document.getElementById('wordTooltip');
+    tooltip.style.display = 'none';
+    currentTooltipWord = null;
+}
 
 loadWords();

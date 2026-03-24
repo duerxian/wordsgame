@@ -366,6 +366,43 @@ h1 {
     background-color: #45a049;
 }
 
+/* 单词浮动框样式 */
+.word-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    display: none;
+    max-width: 300px;
+    font-size: 14px;
+}
+
+.word-tooltip .tooltip-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.word-tooltip .tooltip-item {
+    display: flex;
+    gap: 5px;
+}
+
+.word-tooltip .tooltip-item strong {
+    color: #333;
+    min-width: 50px;
+}
+
+.word-tooltip .tooltip-item span {
+    color: #666;
+    flex: 1;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     .controls {

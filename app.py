@@ -42,6 +42,12 @@ def load_excel_data():
                             if col in df.columns:
                                 meaning = str(row.get(col, '')).strip() if pd.notna(row.get(col)) else ''
                                 break
+                    # 获取音标
+                    phonetic = str(row.get('音标', '')).strip() if pd.notna(row.get('音标', '')) else ''
+                    # 获取例句
+                    example = str(row.get('例句', '')).strip() if pd.notna(row.get('例句', '')) else ''
+                    # 获取联想词
+                    related = str(row.get('联想词', '')).strip() if pd.notna(row.get('联想词', '')) else ''
                     print(f"单词: {word}, 释义: {meaning}")
                     if word:
                         words_data.append({
@@ -51,7 +57,10 @@ def load_excel_data():
                             'grade': grade,
                             'unit': unit,
                             'pos': pos,
-                            'meaning': meaning
+                            'meaning': meaning,
+                            'phonetic': phonetic,
+                            'example': example,
+                            'related': related
                         })
         print(f"加载了 {len(words_data)} 个单词")
         data_loaded = True
@@ -89,8 +98,37 @@ def save_excel_data():
                     original_df['kill'] = False
                     original_df.at[idx, 'kill'] = words_data[idx].get('kill', False)
         
+        # 使用openpyxl设置格式
+        from openpyxl import load_workbook
+        from openpyxl.styles import Alignment
+        from openpyxl.utils import get_column_letter
+        
+        # 保存原始数据
         original_df.to_excel(EXCEL_FILE, index=False)
-        print("数据已保存到Excel文件，其他列数据已保留")
+        
+        # 加载工作簿设置格式
+        wb = load_workbook(EXCEL_FILE)
+        ws = wb.active
+        
+        # 设置所有单元格左对齐
+        for row in ws.iter_rows():
+            for cell in row:
+                cell.alignment = Alignment(horizontal='left', vertical='center')
+        
+        # 设置行高30
+        for row in ws.iter_rows():
+            ws.row_dimensions[row[0].row].height = 30
+        
+        # 保持原列宽不变，仅设置自动折行
+        for col in ws.columns:
+            column = col[0].column_letter
+            # 设置自动折行
+            for cell in col:
+                cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+        
+        # 保存格式设置
+        wb.save(EXCEL_FILE)
+        print("数据已保存到Excel文件，其他列数据已保留，格式已设置为左对齐、行高30、列宽自动适配")
     except Exception as e:
         print(f"保存Excel数据失败: {e}")
 
