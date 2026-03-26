@@ -132,6 +132,24 @@ def save_excel_data():
     except Exception as e:
         print(f"保存Excel数据失败: {e}")
 
+@app.route('/')
+def index():
+    """返回主页"""
+    with open('index.html', 'r', encoding='utf-8') as f:
+        return f.read()
+
+@app.route('/css/style.css')
+def css():
+    """返回CSS文件"""
+    with open('css/style.css', 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'text/css'}
+
+@app.route('/js/main.js')
+def js():
+    """返回JS文件"""
+    with open('js/main.js', 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/javascript'}
+
 @app.route('/api/words', methods=['GET'])
 def get_words():
     """获取所有单词"""
