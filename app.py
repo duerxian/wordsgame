@@ -170,8 +170,25 @@ def add_word():
     if not data or 'word' not in data:
         return jsonify({'error': '缺少单词内容'}), 400
     
+    # 检查单词是否已存在
+    word_text = data['word'].strip().lower()
+    existing_word = next((w for w in words_data if w['word'].lower() == word_text), None)
+    if existing_word:
+        return jsonify({'error': '单词已存在'}), 400
+    
     new_id = max([w['id'] for w in words_data], default=-1) + 1
-    new_word = {'id': new_id, 'word': data['word'].strip()}
+    new_word = {
+            'id': new_id,
+            'word': data['word'].strip(),
+            'grade': data.get('grade', '7上'),
+            'unit': data.get('unit', '1'),
+            'meaning': data.get('meaning', ''),
+            'pos': data.get('pos', ''),
+            'phonetic': data.get('phonetic', ''),
+            'example': data.get('example', ''),
+            'related': data.get('related', ''),
+            'check': 0
+        }
     words_data.append(new_word)
     
     # 保存到Excel
@@ -189,6 +206,19 @@ def update_word(word_id):
     word = next((w for w in words_data if w['id'] == word_id), None)
     if word:
         word['word'] = data['word'].strip()
+        # 更新其他属性
+        if 'grade' in data:
+            word['grade'] = data['grade']
+        if 'unit' in data:
+            word['unit'] = data['unit']
+        if 'meaning' in data:
+            word['meaning'] = data['meaning']
+        if 'pos' in data:
+            word['pos'] = data['pos']
+        if 'example' in data:
+            word['example'] = data['example']
+        if 'related' in data:
+            word['related'] = data['related']
         # 更新kill属性
         if 'kill' in data:
             word['kill'] = bool(data['kill'])

@@ -205,10 +205,12 @@ function renderWords(wordList, languageFilter = 'english') {
             }
             const wordWrapClass = languageFilter === 'meaning' ? ' word-wrap' : '';
             return `
-                <div class="word-card" data-id="${word.id}">
-                    <span class="word-text${wordWrapClass}">${displayText}</span>
-                </div>
-            `;
+            <div class="word-card ${word.check ? 'checked-word' : ''}" data-id="${word.id}">
+                <span class="word-text${wordWrapClass}">${displayText}</span>
+                <input type="checkbox" class="check-box" onchange="toggleCheck(${word.id})" ${word.check ? 'checked' : ''}>
+                <div class="edit-btn" onclick="editWord(${word.id})" title="编辑单词">✏️</div>
+            </div>
+        `;
         }).join('');
     }
     
@@ -224,12 +226,15 @@ function renderWords(wordList, languageFilter = 'english') {
             }
             const wordWrapClass = languageFilter === 'meaning' ? ' word-wrap' : '';
             return `
-                <div class="word-card kill-word" data-id="${word.id}">
-                    <span class="word-text${wordWrapClass}">${displayText}</span>
-                </div>
-            `;
+            <div class="word-card kill-word ${word.check ? 'checked-word' : ''}" data-id="${word.id}">
+                <span class="word-text${wordWrapClass}">${displayText}</span>
+                <input type="checkbox" class="check-box" onchange="toggleCheck(${word.id})" ${word.check ? 'checked' : ''}>
+                <div class="edit-btn" onclick="editWord(${word.id})" title="编辑单词">✏️</div>
+            </div>
+        `;
         }).join('');
     }
+    updateKillWordStyle();
 }
 
 function updateStats(filteredWords = words) {
@@ -293,6 +298,13 @@ function showAddModal() {
     currentEditId = null;
     document.getElementById('modalTitle').textContent = '添加单词';
     document.getElementById('wordInput').value = '';
+    document.getElementById('gradeInput').value = '7上';
+    document.getElementById('unitInput').value = '1';
+    document.getElementById('meaningInput').value = '';
+    document.getElementById('posInput').value = '';
+    document.getElementById('phoneticInput').value = '';
+    document.getElementById('exampleInput').value = '';
+    document.getElementById('relatedInput').value = '';
     document.getElementById('modal').style.display = 'block';
     document.getElementById('wordInput').focus();
 }
@@ -304,12 +316,26 @@ function editWord(id) {
     currentEditId = id;
     document.getElementById('modalTitle').textContent = '编辑单词';
     document.getElementById('wordInput').value = word.word;
+    document.getElementById('gradeInput').value = word.grade || '7上';
+    document.getElementById('unitInput').value = word.unit || '1';
+    document.getElementById('meaningInput').value = word.meaning || '';
+    document.getElementById('posInput').value = word.pos || '';
+    document.getElementById('phoneticInput').value = word.phonetic || '';
+    document.getElementById('exampleInput').value = word.example || '';
+    document.getElementById('relatedInput').value = word.related || '';
     document.getElementById('modal').style.display = 'block';
     document.getElementById('wordInput').focus();
 }
 
 async function saveWord() {
     const wordText = document.getElementById('wordInput').value.trim();
+    const grade = document.getElementById('gradeInput').value;
+    const unit = document.getElementById('unitInput').value;
+    const meaning = document.getElementById('meaningInput').value.trim();
+    const pos = document.getElementById('posInput').value.trim();
+    const phonetic = document.getElementById('phoneticInput').value.trim();
+    const example = document.getElementById('exampleInput').value.trim();
+    const related = document.getElementById('relatedInput').value.trim();
     
     if (!wordText) {
         alert('请输入单词内容');
@@ -321,7 +347,16 @@ async function saveWord() {
             const response = await fetch(`${API_BASE_URL}/${currentEditId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ word: wordText })
+                body: JSON.stringify({ 
+                    word: wordText,
+                    grade: grade,
+                    unit: unit,
+                    meaning: meaning,
+                    pos: pos,
+                    phonetic: phonetic,
+                    example: example,
+                    related: related
+                })
             });
             
             if (response.ok) {
@@ -330,26 +365,44 @@ async function saveWord() {
                 if (index !== -1) {
                     words[index] = updatedWord;
                 }
+                if (confirm('修改成功！')) {
+                    closeModal();
+                    applyFilters(); // 应用当前筛选条件
+                    updateStats();
+                }
             }
         } else {
             const response = await fetch(API_BASE_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ word: wordText })
+                body: JSON.stringify({ 
+                    word: wordText,
+                    grade: grade,
+                    unit: unit,
+                    meaning: meaning,
+                    pos: pos,
+                    phonetic: phonetic,
+                    example: example,
+                    related: related
+                })
             });
             
             if (response.ok) {
                 const newWord = await response.json();
                 words.push(newWord);
+                if (confirm('添加成功！')) {
+                    closeModal();
+                    applyFilters(); // 应用当前筛选条件
+                    updateStats();
+                }
+            } else if (response.status === 400) {
+                const error = await response.json();
+                alert(error.error);
+                return;
             }
         }
-        
-        closeModal();
-        renderWords(words);
-        updateStats();
     } catch (error) {
         console.error('保存失败:', error);
-        alert('保存失败，请重试');
     }
 }
 
@@ -374,13 +427,19 @@ async function deleteWord(id) {
 
 function closeModal() {
     document.getElementById('modal').style.display = 'none';
+    currentEditId = null;
 }
+
+// 阻止点击空白区域关闭对话框
+document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        e.stopPropagation();
+    }
+});
 
 window.onclick = function(event) {
     const modal = document.getElementById('modal');
-    if (event.target === modal) {
-        closeModal();
-    }
+    // 不允许点击空白区域关闭对话框
 }
 
 document.getElementById('wordInput').addEventListener('keypress', function(e) {
@@ -391,6 +450,9 @@ document.getElementById('wordInput').addEventListener('keypress', function(e) {
 
 function handleWordClick(e) {
     e.stopPropagation();
+    if (e.target.closest('.edit-btn') || e.target.closest('.check-box')) {
+        return;
+    }
     const card = this;
     const wordId = parseInt(card.dataset.id);
     const word = words.find(w => w.id === wordId);
@@ -401,6 +463,19 @@ function handleWordClick(e) {
     // 显示浮动框，左对齐单词框，间距8像素
     showWordTooltip(word, rect.left, rect.bottom + 8);
     currentTooltipWord = word;
+}
+
+function toggleCheck(id) {
+    const wordIndex = words.findIndex(w => w.id === id);
+    if (wordIndex === -1) return;
+    words[wordIndex].check = words[wordIndex].check ? 0 : 1;
+    applyFilters();
+    // 保存到Excel
+    fetch(`${API_BASE_URL}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ check: words[wordIndex].check })
+    });
 }
 
 function showWordTooltip(word, x, y) {
@@ -421,6 +496,18 @@ function hideWordTooltip() {
     const tooltip = document.getElementById('wordTooltip');
     tooltip.style.display = 'none';
     currentTooltipWord = null;
+}
+
+function updateKillWordStyle() {
+    const bgColor = document.getElementById('killBgColor').value;
+    const textColor = document.getElementById('killTextColor').value;
+    
+    // 动态更新已斩单词的样式
+    const killCards = document.querySelectorAll('.word-card.kill-word');
+    killCards.forEach(card => {
+        card.style.backgroundColor = bgColor;
+        card.style.color = textColor;
+    });
 }
 
 loadWords();
