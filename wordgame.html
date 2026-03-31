@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词连连看</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <div class="tab-logo">
+                <a href="index.html" class="tab active">wordsgame</a>
+            </div>
+            <div class="tab-container">
+                <a href="index.html" class="tab active">单词表</a>
+                <a href="wordgame.html" class="tab">单词连连看</a>
+                <a href="typing.html" class="tab">打字练习</a>
+            </div>
+        </div>
+
+        
+        <div class="filter-controls">
+            <div class="filter-group">
+                <label for="gradeFilter">grade:</label>
+                <select id="gradeFilter" onchange="applyFilters()">
+                    <option value="">无</option>
+                    <option value="7上">7上</option>
+                    <option value="7下">7下</option>
+                    <option value="8上">8上</option>
+                    <option value="8下">8下</option>
+                    <option value="9上">9上</option>
+                    <option value="9下">9下</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="unitFilter">unit:</label>
+                <select id="unitFilter" onchange="applyFilters()">
+                    <option value="">无</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="languageFilter">语言:</label>
+                <select id="languageFilter" onchange="applyFilters()">
+                    <option value="english" selected>英文-释义配对</option>
+                    <option value="meaning">释义-英文配对</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="posFilter">词性:</label>
+                <select id="posFilter" onchange="applyFilters()">
+                    <option value="">无</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="sortFilter">排序:</label>
+                <select id="sortFilter" onchange="applyFilters()">
+                    <option value="id">id</option>
+                    <option value="az">a-z</option>
+                </select>
+            </div>
+            
+        </div>
+        
+        <div class="stats">
+            <span>总计: <strong id="totalWords">0</strong> 个单词</span>
+            <span>待斩杀单词: <strong id="normalWords">0</strong> 个</span>
+            <span>已斩杀单词: <strong id="killWords">0</strong> 个</span>
+        </div>
+        
+        <div class="word-container">
+            <div class="word-section">
+                <h2>英文</h2>
+                <div class="word-list" id="normalWordContainer">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+            <div class="word-section">
+                <h2>释义</h2>
+                <div class="word-list" id="killWordContainer">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <script src="js/game1.js" defer></script>
+
+</body>
+</html>

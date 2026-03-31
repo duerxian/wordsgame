@@ -133,6 +133,7 @@ def save_excel_data():
         print(f"保存Excel数据失败: {e}")
 
 @app.route('/')
+@app.route('/index.html')
 def index():
     """返回主页"""
     with open('index.html', 'r', encoding='utf-8') as f:
@@ -148,6 +149,12 @@ def css():
 def js():
     """返回JS文件"""
     with open('js/main.js', 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/javascript'}
+
+@app.route('/js/game1.js')
+def game1_js():
+    """返回游戏JS文件"""
+    with open('js/game1.js', 'r', encoding='utf-8') as f:
         return f.read(), 200, {'Content-Type': 'application/javascript'}
 
 @app.route('/api/words', methods=['GET'])
@@ -257,6 +264,16 @@ def save_all_words():
     words_data = data['words']
     save_excel_data()
     return jsonify({'message': '保存成功'})
+
+@app.route('/wordgame.html')
+def wordgame():
+    with open('wordgame.html', 'r', encoding='utf-8') as f:
+        return f.read()
+
+@app.route('/typing.html')
+def typing():
+    with open('typing.html', 'r', encoding='utf-8') as f:
+        return f.read()
 
 if __name__ == '__main__':
     # 启动Flask应用
