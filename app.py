@@ -163,6 +163,14 @@ def game2_js():
     with open('js/game2.js', 'r', encoding='utf-8') as f:
         return f.read(), 200, {'Content-Type': 'application/javascript'}
 
+# 🎵 添加声音文件路由
+@app.route('/sounds/<filename>')
+def serve_sound(filename):
+    """返回声音文件"""
+    with open(f'sounds/{filename}', 'rb') as f:
+        return f.read(), 200, {'Content-Type': 'audio/mpeg'}
+
+
 @app.route('/api/words', methods=['GET'])
 def get_words():
     """获取所有单词"""

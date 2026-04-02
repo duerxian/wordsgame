@@ -4,6 +4,32 @@ let filteredWords = [];
 let currentWordIndex = 0;
 let correctCount = 0;
 
+
+// 🎵 音频对象预加载
+const sounds = {
+    click: new Audio('/sounds/click01.mp3'),
+    correct: new Audio('/sounds/correct.mp3'),
+    wrong: new Audio('/sounds/wrong.mp3'),
+    success: new Audio('/sounds/success.mp3')
+};
+
+// 预加载声音
+function preloadSounds() {
+    Object.values(sounds).forEach(sound => {
+        sound.load();
+        sound.volume = 1; // 设置音量
+    });
+}
+
+// 播放声音
+function playSound(soundName) {
+    const sound = sounds[soundName];
+    if (sound) {
+        sound.currentTime = 0; // 重置播放位置
+        sound.play().catch(e => console.log('声音播放失败:', e));
+    }
+}
+
 // 简单的词形还原函数
 function lemmatize(word) {
     if (word.length < 2) {
@@ -50,13 +76,15 @@ function testLemmatize() {
 // 初始化游戏
 async function initGame() {
     try {
+        // 🎵 预加载声音
+        preloadSounds();
+        
         const response = await fetch(`${API_BASE_URL}`);
         words = await response.json();
         
         console.log('=== 游戏初始化 ===');
         console.log('加载单词数量:', words.length);
         
-        // 测试词形还原功能
         testLemmatize();
         
         applyFilters();
@@ -124,6 +152,7 @@ function initInputEvents() {
 function handleInput(event) {
     const blank = event.target;
     if (!blank || blank.disabled || blank.tagName !== 'INPUT' || !blank.classList.contains('blank')) return;
+    playSound('click');
 }
 
 // 处理回车键
@@ -142,53 +171,41 @@ function validateAnswer(blank) {
     const input = blank.value.trim().toLowerCase();
     const expectedWord = blank.dataset.word.toLowerCase();
     
-    console.log('===== 验证开始 =====');
-    console.log('1. 输入值:', input);
-    console.log('2. 期望值:', expectedWord);
-    console.log('3. 是否匹配:', isSameWord(input, expectedWord));
-    console.log('4. currentWordIndex:', currentWordIndex);
-    console.log('5. filteredWords.length:', filteredWords.length);
-    console.log('6. correctCount:', correctCount);
-    
     if (isSameWord(input, expectedWord)) {
-        console.log('✓ 验证通过！');
+        // 🎵 播放正确声音
+        playSound('correct');
         
         blank.disabled = true;
         blank.classList.add('correct');
         correctCount++;
         
-        console.log('7. correctCount 自增后:', correctCount);
-        
         const isComplete = (correctCount === filteredWords.length);
-        console.log('8. 是否完成:', isComplete);
         
         if (isComplete) {
+            // 🎵 播放成功声音
+            playSound('success');
             setTimeout(() => {
                 alert('恭喜！全对了！');
             }, 500);
-            console.log('===== 验证结束 =====\n');
             return;
         }
         
         setTimeout(() => {
             currentWordIndex++;
-            console.log('9. 切换后 currentWordIndex:', currentWordIndex);
-            
             if (currentWordIndex < filteredWords.length) {
-                console.log('10. 下一个单词:', filteredWords[currentWordIndex].word);
                 renderWord(filteredWords[currentWordIndex]);
             }
         }, 300);
     } else {
-        console.log('✗ 验证失败！');
+        // 🎵 播放错误声音
+        playSound('wrong');
+        
         blank.classList.add('error');
         setTimeout(() => {
             blank.classList.remove('error');
             blank.value = '';
         }, 500);
     }
-    
-    console.log('===== 验证结束 =====\n');
 }
 
 // 显示单词详情
