@@ -56,6 +56,104 @@ h1 {
     color: #333;
 }
 
+/* 单词释义容器 */
+.word-meaning-container {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 20px;
+}
+
+.word-meaning {
+    display: inline-block;
+    background-color: #fff;
+    padding: 15px 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-size: 18px;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.word-meaning:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* 例句容器 */
+.sentence-container {
+    text-align: center;
+    padding: 20px;
+}
+
+.sentence {
+    font-size: 24px;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* 填空输入框 */
+.blank {
+    display: inline-block;
+    width: 160px;
+    height: 60px;
+    margin: 0 10px;
+    padding: 0 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 24px;
+    text-align: center;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.blank:focus {
+    border-color: #2196F3;
+}
+
+.blank.correct {
+    border-color: #4CAF50;
+    background-color: #c8e6c9;
+    color: #2e7d32;
+}
+
+/* 单词浮动框样式 */
+.word-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    display: none;
+    max-width: 360px;
+    font-size: 16px;
+}
+
+.word-tooltip .tooltip-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.word-tooltip .tooltip-item {
+    display: flex;
+    gap: 5px;
+}
+
+.word-tooltip .tooltip-item strong {
+    color: #333;
+    min-width: 50px;
+}
+
+.word-tooltip .tooltip-item span {
+    color: #666;
+    flex: 1;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    align-content: end;
+}
+
 .controls {
     display: flex;
     justify-content: space-between;
@@ -160,12 +258,27 @@ h1 {
 .stats {
     display: flex;
     justify-content: space-around;
-    margin-bottom: 20px;
+    align-content: center;
     color: #666;
     font-size: 14px;
     flex-wrap: wrap;
     gap: 15px;
+    align-items: center;
 }
+
+.stats button {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.stats button:hover {
+    background-color: #f5f5f5; 
+}
+
 
 .word-container {
     display: flex;
@@ -552,4 +665,18 @@ h1 {
         flex-wrap: wrap;
         justify-content: center;
     }
+}
+
+
+
+.blank.error {
+    border-color: #f44336;
+    background-color: #ffcdd2;
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
 }

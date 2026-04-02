@@ -63,17 +63,17 @@
             <div class="filter-group">
                 <label for="sortFilter">排序:</label>
                 <select id="sortFilter" onchange="applyFilters()">
-                    <option value="id">id</option>
+                    <option value="id" selected>id</option>
+                    <option value="random">随机</option>
                     <option value="az">a-z</option>
                 </select>
             </div>
-            
-        </div>
         
         <div class="stats">
             <span>总计: <strong id="totalWords">0</strong> 个单词</span>
             <span>待斩杀单词: <strong id="normalWords">0</strong> 个</span>
-            <span>已斩杀单词: <strong id="killWords">0</strong> 个</span>
+            <span>时间: <strong>00 : 00 : 00</strong></span>
+            <button>开始计时</button>
         </div>
         
         <div class="word-container">

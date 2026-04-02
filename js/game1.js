@@ -3,6 +3,70 @@ let words = [];
 let matchedPairs = new Set();
 let lastClickedWord = null;
 let currentLanguage = 'english'; // 默认英语-释义配对
+let timerInterval = null;
+let startTime = 0;
+let isTimerRunning = false;
+
+// 更新统计信息
+function updateStats(filteredWords) {
+    const totalWords = filteredWords.length;
+    const normalWords = filteredWords.length;
+    const killWords = 0; // 单词连连看没有已斩杀单词的概念
+    
+    const totalWordsElement = document.getElementById('totalWords');
+    if (totalWordsElement) {
+        totalWordsElement.textContent = totalWords;
+    }
+    
+    const normalWordsElement = document.getElementById('normalWords');
+    if (normalWordsElement) {
+        normalWordsElement.textContent = normalWords;
+    }
+    
+    const killWordsElement = document.getElementById('killWords');
+    if (killWordsElement) {
+        killWordsElement.textContent = killWords;
+    }
+}
+
+// 格式化时间
+function formatTime(ms) {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    return `${hours.toString().padStart(2, '0')} : ${(minutes % 60).toString().padStart(2, '0')} : ${(seconds % 60).toString().padStart(2, '0')}`;
+}
+
+// 更新计时器显示
+function updateTimer() {
+    if (isTimerRunning) {
+        const currentTime = Date.now();
+        const elapsedTime = currentTime - startTime;
+        const timeElement = document.querySelector('.stats span:nth-child(3) strong');
+        if (timeElement) {
+            timeElement.textContent = formatTime(elapsedTime);
+        }
+    }
+}
+
+// 开始计时
+function startTimer() {
+    if (!isTimerRunning) {
+        startTime = Date.now();
+        isTimerRunning = true;
+        timerInterval = setInterval(updateTimer, 1000);
+        updateTimer(); // 立即更新一次
+    }
+}
+
+// 停止计时
+function stopTimer() {
+    if (isTimerRunning) {
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+    }
+}
 
 // 初始化游戏
 async function initGame() {
@@ -11,13 +75,41 @@ async function initGame() {
         words = await response.json();
         
         // 过滤出待斩杀单词
-        const normalWords = words.filter(word => !word.kill);
+        let normalWords = words.filter(word => !word.kill);
+        
+        // 去重逻辑
+        const seenWords = new Set();
+        normalWords = normalWords.filter(word => {
+            const wordKey = word.word.toLowerCase();
+            if (seenWords.has(wordKey)) {
+                return false;
+            }
+            seenWords.add(wordKey);
+            return true;
+        });
         
         // 打乱右侧释义顺序
         const shuffledMeanings = [...normalWords].sort(() => Math.random() - 0.5);
         
         renderWords(normalWords, shuffledMeanings);
         initClickEvents();
+        updateStats(normalWords);
+        
+        // 添加计时按钮事件监听
+        const startButton = document.querySelector('.stats button');
+        if (startButton) {
+            startButton.addEventListener('click', () => {
+                if (isTimerRunning) {
+                    stopTimer();
+                    startButton.textContent = '开始计时';
+                    startButton.style.backgroundColor = ''; // 恢复原色
+                } else {
+                    startTimer();
+                    startButton.textContent = '结束计时';
+                    startButton.style.backgroundColor = "#ffcc44"; // 黄色
+                }
+            });
+        }
     } catch (error) {
         console.error('初始化游戏失败:', error);
     }
@@ -114,10 +206,62 @@ function handleWordClick(event) {
         clickedCard.style.backgroundColor = '#c8e6c9';
         matchedPairs.add(clickedId);
         
+        // 获取当前筛选后的单词数量
+        const gradeFilter = document.getElementById('gradeFilter').value;
+        const unitFilter = document.getElementById('unitFilter').value;
+        const posFilter = document.getElementById('posFilter').value;
+        
+        let filteredWords = words.filter(word => !word.kill);
+        
+        if (gradeFilter) {
+            filteredWords = filteredWords.filter(word => word.grade === gradeFilter);
+        }
+        
+        if (unitFilter) {
+            filteredWords = filteredWords.filter(word => word.unit === unitFilter);
+        }
+        
+        if (posFilter) {
+            filteredWords = filteredWords.filter(word => word.pos === posFilter);
+        }
+        
+        // 去重
+        const seenWords = new Set();
+        filteredWords = filteredWords.filter(word => {
+            const wordKey = word.word.toLowerCase();
+            if (seenWords.has(wordKey)) {
+                return false;
+            }
+            seenWords.add(wordKey);
+            return true;
+        });
+        
         // 检查是否全部匹配
-        if (matchedPairs.size === words.filter(word => !word.kill).length) {
+        if (matchedPairs.size === filteredWords.length) {
             setTimeout(() => {
-                alert('恭喜！全对了！');
+                // 尝试进入下一单元
+                if (gradeFilter && unitFilter) {
+                    const currentUnit = parseInt(unitFilter);
+                    const nextUnit = currentUnit + 1;
+                    
+                    // 检查下一单元是否存在
+                    const nextUnitExists = words.some(word => word.grade === gradeFilter && word.unit === nextUnit.toString());
+                    
+                    if (nextUnitExists) {
+                        // 进入下一单元
+                        stopTimer(); // 停止计时
+                        document.getElementById('unitFilter').value = nextUnit.toString();
+                        applyFilters();
+                    } else {
+                        // 没有下一单元
+                        stopTimer(); // 停止计时
+                        alert('恭喜，本单元结束！');
+                    }
+                } else {
+                    // 没有选择单元或年级
+                    stopTimer(); // 停止计时
+                    alert('恭喜！全对了！');
+                }
             }, 500);
         }
     } else {
@@ -169,16 +313,44 @@ function applyFilters() {
         filteredWords.sort((a, b) => a.id - b.id);
     }
     
+    // 去重逻辑
+    const seenWords = new Set();
+    filteredWords = filteredWords.filter(word => {
+        const wordKey = word.word.toLowerCase();
+        if (seenWords.has(wordKey)) {
+            return false;
+        }
+        seenWords.add(wordKey);
+        return true;
+    });
+    
     // 打乱右侧顺序
     const shuffledMeanings = [...filteredWords].sort(() => Math.random() - 0.5);
     
     // 重新渲染
     renderWords(filteredWords, shuffledMeanings);
     initClickEvents();
+    updateStats(filteredWords);
     
     // 重置匹配状态
     matchedPairs.clear();
     lastClickedWord = null;
+    
+    // 重新添加计时按钮事件监听
+    const startButton = document.querySelector('.stats button');
+    if (startButton) {
+        startButton.addEventListener('click', () => {
+            if (isTimerRunning) {
+                stopTimer();
+                startButton.textContent = '开始计时';
+                startButton.style.backgroundColor = ''; // 恢复原色
+            } else {
+                startTimer();
+                startButton.textContent = '结束计时';
+                startButton.style.backgroundColor = '#ffcc44'; // 黄色
+            }
+        });
+    }
 }
 
 // 页面加载完成后初始化游戏

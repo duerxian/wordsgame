@@ -69,12 +69,21 @@
                 <label for="posFilter">词性:</label>
                 <select id="posFilter" onchange="applyFilters()">
                     <option value="">无</option>
+                    <option value="n.">n.</option>
+                    <option value="v.">v.</option>
+                    <option value="adj.">adj.</option>
+                    <option value="adv.">adv.</option>
+                    <option value="prep.">prep.</option>
+                    <option value="conj.">conj.</option>
+                    <option value="pron.">pron.</option>
+                    <option value="interj.">interj.</option>
                 </select>
             </div>
             <div class="filter-group">
                 <label for="sortFilter">排序:</label>
                 <select id="sortFilter" onchange="applyFilters()">
-                    <option value="id">id</option>
+                    <option value="id" selected>id</option>
+                    <option value="random">随机</option>
                     <option value="az">a-z</option>
                 </select>
             </div>

@@ -73,7 +73,10 @@ function applyFilters() {
     }
     
     if (unitFilter) {
-        filteredWords = filteredWords.filter(word => word.unit === unitFilter);
+        filteredWords = filteredWords.filter(word => {
+            // 处理unit类型不匹配的问题，将两者都转换为字符串进行比较
+            return String(word.unit) === unitFilter;
+        });
     }
     
     if (posFilter) {
@@ -85,11 +88,26 @@ function applyFilters() {
         });
     }
     
+    // 排序
     if (sortFilter === 'az') {
         filteredWords.sort((a, b) => a.word.localeCompare(b.word));
+    } else if (sortFilter === 'random') {
+        // 随机排序
+        filteredWords.sort(() => Math.random() - 0.5);
     } else {
         filteredWords.sort((a, b) => a.id - b.id);
     }
+    
+    // 去重逻辑
+    const seenWords = new Set();
+    filteredWords = filteredWords.filter(word => {
+        const wordKey = word.word.toLowerCase();
+        if (seenWords.has(wordKey)) {
+            return false;
+        }
+        seenWords.add(wordKey);
+        return true;
+    });
     
     renderWords(filteredWords, languageFilter);
     updateStats(filteredWords);
@@ -268,7 +286,10 @@ async function searchWords() {
         }
         
         if (unitFilter) {
-            filteredResults = filteredResults.filter(word => word.unit === unitFilter);
+            filteredResults = filteredResults.filter(word => {
+                // 处理unit类型不匹配的问题，将两者都转换为字符串进行比较
+                return String(word.unit) === unitFilter;
+            });
         }
         
         if (posFilter) {
@@ -282,6 +303,9 @@ async function searchWords() {
         
         if (sortFilter === 'az') {
             filteredResults.sort((a, b) => a.word.localeCompare(b.word));
+        } else if (sortFilter === 'random') {
+            // 随机排序
+            filteredResults.sort(() => Math.random() - 0.5);
         } else {
             filteredResults.sort((a, b) => a.id - b.id);
         }

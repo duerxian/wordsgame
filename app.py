@@ -157,6 +157,12 @@ def game1_js():
     with open('js/game1.js', 'r', encoding='utf-8') as f:
         return f.read(), 200, {'Content-Type': 'application/javascript'}
 
+@app.route('/js/game2.js')
+def game2_js():
+    """返回游戏JS文件"""
+    with open('js/game2.js', 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/javascript'}
+
 @app.route('/api/words', methods=['GET'])
 def get_words():
     """获取所有单词"""
