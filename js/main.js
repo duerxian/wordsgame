@@ -219,7 +219,7 @@ function renderWords(wordList, languageFilter = 'english') {
             if (languageFilter === 'meaning') {
                 // 尝试不同的释义字段名
                 const meaning = word.meaning || word['中文释义'] || word['释义'] || '';
-                displayText = meaning ? `${word.word}：${meaning}` : word.word;
+                displayText = meaning ? `${meaning}` : word.word;
             }
             const wordWrapClass = languageFilter === 'meaning' ? ' word-wrap' : '';
             return `
@@ -240,7 +240,7 @@ function renderWords(wordList, languageFilter = 'english') {
             if (languageFilter === 'meaning') {
                 // 尝试不同的释义字段名
                 const meaning = word.meaning || word['中文释义'] || word['释义'] || '';
-                displayText = meaning ? `${word.word}：${meaning}` : word.word;
+                displayText = meaning ? `${meaning}` : word.word;
             }
             const wordWrapClass = languageFilter === 'meaning' ? ' word-wrap' : '';
             return `
