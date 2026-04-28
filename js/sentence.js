@@ -187,7 +187,7 @@ function renderArticles(articles) {
     
     articles.forEach(article => {
         const articleCard = document.createElement('div');
-        articleCard.className = 'word-card full-width';
+        articleCard.className = `word-card full-width ${article.check ? 'checked' : ''}`;
         articleCard.dataset.id = article.id;
         
         // 文章列表始终显示英文标题，不受语言筛选影响
@@ -559,26 +559,27 @@ function searchSentences() {
 }
 
 // 切换文章已斩状态 - 对应Excel的kill列
-async function toggleKill(id) {
+function toggleKill(id) {
     const article = articles.find(a => a.id === id);
     if (article) {
         article.kill = !article.kill;
-        try {
-            const response = await fetch(`${API_BASE_URL}/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ kill: article.kill })
-            });
-            if (!response.ok) {
-                console.error('更新kill状态失败');
-                article.kill = !article.kill; // 回滚
+        // 更新卡片样式
+        const articleCard = document.querySelector(`[data-id="${id}"]`);
+        if (articleCard) {
+            if (article.kill) {
+                articleCard.classList.add('killed');
+            } else {
+                articleCard.classList.remove('killed');
             }
-        } catch (error) {
-            console.error('网络错误:', error);
-            article.kill = !article.kill; // 回滚
         }
+        // 保存到后端
+        fetch('/api/articles', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(article)
+        });
     }
 }
 
@@ -587,6 +588,15 @@ async function toggleCheckStatus(id) {
     const article = articles.find(a => a.id === id);
     if (article) {
         article.check = article.check ? 0 : 1;
+        // 更新卡片样式
+        const articleCard = document.querySelector(`[data-id="${id}"]`);
+        if (articleCard) {
+            if (article.check) {
+                articleCard.classList.add('checked');
+            } else {
+                articleCard.classList.remove('checked');
+            }
+        }
         try {
             const response = await fetch(`${API_BASE_URL}/${id}`, {
                 method: 'PUT',
@@ -598,10 +608,26 @@ async function toggleCheckStatus(id) {
             if (!response.ok) {
                 console.error('更新check状态失败');
                 article.check = article.check ? 0 : 1; // 回滚
+                // 回滚卡片样式
+                if (articleCard) {
+                    if (article.check) {
+                        articleCard.classList.add('checked');
+                    } else {
+                        articleCard.classList.remove('checked');
+                    }
+                }
             }
         } catch (error) {
             console.error('网络错误:', error);
             article.check = article.check ? 0 : 1; // 回滚
+            // 回滚卡片样式
+            if (articleCard) {
+                if (article.check) {
+                    articleCard.classList.add('checked');
+                } else {
+                    articleCard.classList.remove('checked');
+                }
+            }
         }
     }
 }

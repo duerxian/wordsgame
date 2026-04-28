@@ -2,6 +2,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import pandas as pd
 import os
+import openpyxl
+from openpyxl.styles import Alignment
 
 app = Flask(__name__)
 CORS(app)
@@ -194,10 +196,34 @@ def index():
     with open('index.html', 'r', encoding='utf-8') as f:
         return f.read()
 
+@app.route('/wordgame.html')
+def wordgame():
+    """返回单词连连看页面"""
+    with open('wordgame.html', 'r', encoding='utf-8') as f:
+        return f.read()
+
+@app.route('/typing.html')
+def typing():
+    """返回打字练习页面"""
+    with open('typing.html', 'r', encoding='utf-8') as f:
+        return f.read()
+
 @app.route('/sentence.html')
 def sentence():
     """返回句子练习页面"""
     with open('sentence.html', 'r', encoding='utf-8') as f:
+        return f.read()
+
+@app.route('/balloongame.html')
+def balloongame():
+    """返回气球射击游戏页面"""
+    with open('balloongame.html', 'r', encoding='utf-8') as f:
+        return f.read()
+
+@app.route('/config.html')
+def config():
+    """返回配置页面"""
+    with open('config.html', 'r', encoding='utf-8') as f:
         return f.read()
 
 @app.route('/css/style.css')
@@ -242,6 +268,12 @@ def balloon_js():
 def sentence_js():
     """返回句子练习JS文件"""
     with open('js/sentence.js', 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/javascript'}
+
+@app.route('/js/config.js')
+def config_js():
+    """返回配置JS文件"""
+    with open('js/config.js', 'r', encoding='utf-8') as f:
         return f.read(), 200, {'Content-Type': 'application/javascript'}
 
 # 🎵 添加声音文件路由
@@ -309,6 +341,86 @@ def add_article():
     save_article_to_excel()
     
     return jsonify(new_article), 201
+
+def save_article_to_excel():
+    """保存文章数据到Excel文件"""
+    global articles_data
+    
+    try:
+        if os.path.exists(ARTICLE_FILE):
+            # 读取现有Excel文件
+            df = pd.read_excel(ARTICLE_FILE)
+            df.columns = [str(col).strip() for col in df.columns]
+            
+            # 准备要写入的数据
+            data_list = []
+            for article in articles_data:
+                data_list.append({
+                    'title': article.get('title', ''),
+                    'Grade': article.get('grade', ''),
+                    'unit': article.get('unit', ''),
+                    'English': article.get('english', ''),
+                    'Chinese': article.get('meaning', ''),
+                    'kill': article.get('kill', False),
+                    'check': article.get('check', 0)
+                })
+            
+            # 创建新的DataFrame
+            new_df = pd.DataFrame(data_list)
+            
+            # 保存到Excel文件，保持原有格式
+            with pd.ExcelWriter(ARTICLE_FILE, engine='openpyxl') as writer:
+                new_df.to_excel(writer, index=False, sheet_name='Sheet1')
+                
+                # 获取工作表并设置格式
+                worksheet = writer.sheets['Sheet1']
+                
+                # 设置列宽
+                for column in worksheet.columns:
+                    column_letter = column[0].column_letter
+                    # English和Chinese列宽设为60，其他列自动调整
+                    if column_letter in ['D', 'E']:  # 假设English是第4列，Chinese是第5列
+                        worksheet.column_dimensions[column_letter].width = 60
+                    else:
+                        max_length = 0
+                        for cell in column:
+                            try:
+                                if len(str(cell.value)) > max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                        adjusted_width = min(max_length + 2, 50)
+                        worksheet.column_dimensions[column_letter].width = adjusted_width
+                
+                # 设置行高自动匹配内容
+                for row in worksheet.iter_rows(min_row=2):  # 跳过表头
+                    max_height = 25  # 默认行高
+                    for cell in row:
+                        if cell.value:
+                            # 计算内容高度（假设每行20个字符）
+                            lines = len(str(cell.value)) // 20 + 1
+                            cell_height = lines * 10
+                            if cell_height > max_height:
+                                max_height = cell_height
+                    worksheet.row_dimensions[row[0].row].height = max_height
+                
+                # 设置单元格自动换行、垂直居中、左对齐
+                for row in worksheet.iter_rows(min_row=2):
+                    for cell in row:
+                        cell.alignment = openpyxl.styles.Alignment(
+                            wrap_text=True,
+                            vertical='center',
+                            horizontal='left'
+                        )
+            
+            print(f"✅ 成功保存 {len(articles_data)} 篇文章到Excel")
+        else:
+            print(f"⚠️ Excel文件不存在: {ARTICLE_FILE}")
+    except Exception as e:
+        print(f"❌ 保存文章到Excel失败: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
 
 @app.route('/api/articles/<int:article_id>', methods=['PUT'])
 def update_article(article_id):

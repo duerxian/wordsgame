@@ -7,6 +7,36 @@ let timerInterval = null;
 let startTime = 0;
 let isTimerRunning = false;
 
+// 使用Web Speech API播放单词发音 - 优化版本
+function speakWord(word) {
+    if (!word) return;
+    
+    console.log("🚀 播放单词：", word);
+    
+    // 先清空之前的语音
+    window.speechSynthesis.cancel();
+    
+    const msg = new SpeechSynthesisUtterance();
+    msg.text = word;
+    msg.lang = 'en-US'; // 设置为美式英语
+    msg.rate = 0.8; // 语速稍慢，便于学习
+    msg.pitch = 1;
+
+    // 核心：Chrome 必须等语音加载完成
+    function speak() {
+        window.speechSynthesis.speak(msg);
+        console.log("✅ 正在播放……");
+    }
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length) {
+        speak();
+    } else {
+        // 如果语音列表为空，等待加载
+        window.speechSynthesis.onvoiceschanged = speak;
+    }
+}
+
 // 更新统计信息
 function updateStats(filteredWords) {
     const totalWords = filteredWords.length;
@@ -74,8 +104,19 @@ async function initGame() {
         const response = await fetch(`${API_BASE_URL}`);
         words = await response.json();
         
-        // 过滤出待斩杀单词
-        let normalWords = words.filter(word => !word.kill);
+        // 获取kill筛选条件
+        const killFilter = document.getElementById('posFilter').value;
+        
+        // 过滤单词
+        let normalWords = [...words];
+        
+        // 应用kill筛选
+        if (killFilter === 'unkilled') {
+            normalWords = normalWords.filter(word => !word.kill);
+        } else if (killFilter === 'killed') {
+            normalWords = normalWords.filter(word => word.kill);
+        }
+        // 'all' 选项不做过滤
         
         // 去重逻辑
         const seenWords = new Set();
@@ -184,6 +225,18 @@ function handleWordClick(event) {
         return;
     }
     
+    // 播放发音并添加视觉反馈
+    const wordObj = words.find(w => w.id === clickedId);
+    if (wordObj && wordObj.word) {
+        speakWord(wordObj.word);
+        
+        // 添加发音时的视觉反馈
+        clickedCard.classList.add('speaking');
+        setTimeout(() => {
+            clickedCard.classList.remove('speaking');
+        }, 1000);
+    }
+    
     // 如果是第一个点击的单词
     if (!lastClickedWord) {
         lastClickedWord = { id: clickedId, type: clickedType, element: clickedCard };
@@ -209,20 +262,24 @@ function handleWordClick(event) {
         // 获取当前筛选后的单词数量
         const gradeFilter = document.getElementById('gradeFilter').value;
         const unitFilter = document.getElementById('unitFilter').value;
-        const posFilter = document.getElementById('posFilter').value;
+        const killFilter = document.getElementById('posFilter').value;
         
-        let filteredWords = words.filter(word => !word.kill);
+        let filteredWords = [...words];
+        
+        // 应用kill筛选
+        if (killFilter === 'unkilled') {
+            filteredWords = filteredWords.filter(word => !word.kill);
+        } else if (killFilter === 'killed') {
+            filteredWords = filteredWords.filter(word => word.kill);
+        }
+        // 'all' 选项不做过滤
         
         if (gradeFilter) {
             filteredWords = filteredWords.filter(word => word.grade === gradeFilter);
         }
         
         if (unitFilter) {
-            filteredWords = filteredWords.filter(word => word.unit === unitFilter);
-        }
-        
-        if (posFilter) {
-            filteredWords = filteredWords.filter(word => word.pos === posFilter);
+            filteredWords = filteredWords.filter(word => String(word.unit) === unitFilter);
         }
         
         // 去重
@@ -284,7 +341,7 @@ function handleWordClick(event) {
 function applyFilters() {
     const gradeFilter = document.getElementById('gradeFilter').value;
     const unitFilter = document.getElementById('unitFilter').value;
-    const posFilter = document.getElementById('posFilter').value;
+    const killFilter = document.getElementById('posFilter').value;
     const sortFilter = document.getElementById('sortFilter').value;
     const languageFilter = document.getElementById('languageFilter').value;
     
@@ -292,23 +349,30 @@ function applyFilters() {
     currentLanguage = languageFilter;
     
     // 过滤单词
-    let filteredWords = words.filter(word => !word.kill);
+    let filteredWords = [...words];
+    
+    // 应用kill筛选
+    if (killFilter === 'unkilled') {
+        filteredWords = filteredWords.filter(word => !word.kill);
+    } else if (killFilter === 'killed') {
+        filteredWords = filteredWords.filter(word => word.kill);
+    }
+    // 'all' 选项不做过滤
     
     if (gradeFilter) {
         filteredWords = filteredWords.filter(word => word.grade === gradeFilter);
     }
     
     if (unitFilter) {
-        filteredWords = filteredWords.filter(word => word.unit === unitFilter);
-    }
-    
-    if (posFilter) {
-        filteredWords = filteredWords.filter(word => word.pos === posFilter);
+        filteredWords = filteredWords.filter(word => String(word.unit) === unitFilter);
     }
     
     // 排序
     if (sortFilter === 'az') {
         filteredWords.sort((a, b) => a.word.localeCompare(b.word));
+    } else if (sortFilter === 'random') {
+        // 随机排序
+        filteredWords.sort(() => Math.random() - 0.5);
     } else {
         filteredWords.sort((a, b) => a.id - b.id);
     }
@@ -354,4 +418,19 @@ function applyFilters() {
 }
 
 // 页面加载完成后初始化游戏
-window.addEventListener('DOMContentLoaded', initGame);
+window.addEventListener('DOMContentLoaded', function() {
+    // 唤醒语音引擎 - 确保语音列表已加载
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.getVoices();
+        
+        // Chrome需要等待语音加载完成
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                console.log('✅ 语音引擎已就绪');
+            };
+        }
+    }
+    
+    console.log('🎮 单词连连看游戏已加载');
+    initGame();
+});

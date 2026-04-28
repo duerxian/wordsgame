@@ -17,6 +17,36 @@ const mockWords = [
     { id: 10, word: 'jacket', kill: false, grade: '8上', unit: '5', pos: 'n.', meaning: '夹克衫' }
 ];
 
+// 使用Web Speech API播放单词发音 - 优化版本
+function speakWord(word) {
+    if (!word) return;
+    
+    console.log("🚀 播放单词：", word);
+    
+    // 先清空之前的语音
+    window.speechSynthesis.cancel();
+    
+    const msg = new SpeechSynthesisUtterance();
+    msg.text = word;
+    msg.lang = 'en-US'; // 设置为美式英语
+    msg.rate = 0.8; // 语速稍慢，便于学习
+    msg.pitch = 1;
+
+    // 核心：Chrome 必须等语音加载完成
+    function speak() {
+        window.speechSynthesis.speak(msg);
+        console.log("✅ 正在播放……");
+    }
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length) {
+        speak();
+    } else {
+        // 如果语音列表为空，等待加载
+        window.speechSynthesis.onvoiceschanged = speak;
+    }
+}
+
 async function loadWords() {
     try {
         const response = await fetch(API_BASE_URL);
@@ -482,6 +512,15 @@ function handleWordClick(e) {
     const word = words.find(w => w.id === wordId);
     if (!word) return;
     
+    // 播放发音并添加视觉反馈
+    speakWord(word.word);
+    
+    // 添加发音时的视觉反馈
+    card.classList.add('speaking');
+    setTimeout(() => {
+        card.classList.remove('speaking');
+    }, 1000);
+    
     // 获取单词框的位置
     const rect = card.getBoundingClientRect();
     // 显示浮动框，左对齐单词框，间距8像素
@@ -550,5 +589,22 @@ function updateKillWordStyle() {
         card.style.color = textColor;
     });
 }
+
+// 页面加载完成后初始化语音引擎
+document.addEventListener('DOMContentLoaded', function() {
+    // 唤醒语音引擎 - 确保语音列表已加载
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.getVoices();
+        
+        // Chrome需要等待语音加载完成
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                console.log('✅ 语音引擎已就绪');
+            };
+        }
+    }
+    
+    console.log('📄 主页已加载');
+});
 
 loadWords();
