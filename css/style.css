@@ -11,7 +11,7 @@ body {
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
 }
 
@@ -237,6 +237,10 @@ h1 {
     align-items: center;
     gap: 8px;
 }
+.filter-group p {
+    font-size: 12px;
+    color: #666;
+}
 
 .filter-group label {
     font-size: 14px;
@@ -292,7 +296,7 @@ h1 {
 
 .word-section {
     flex: 1;
-    min-width: 575px;
+    min-width: 675px;
     background-color: #f9f9f9;
     border-radius: 8px;
     padding: 20px;
@@ -711,7 +715,7 @@ h1 {
 .article-content {
     padding: 20px;
     line-height: 2;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .article-content h3 {
@@ -737,7 +741,7 @@ h1 {
     word-wrap: break-word;
     overflow-wrap: break-word;
     white-space: pre-wrap;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 .sentence-line:last-child {
@@ -750,6 +754,7 @@ h1 {
     padding: 2px 6px;
     cursor: pointer;
     position: relative;
+    margin-bottom: 10px;
 }
 
 .clickable-word:hover {
@@ -771,7 +776,7 @@ h1 {
 /* 单词翻译显示样式 - 在单词正下方 */
 .word-translation {
     display: block;
-    color: #f74e00;
+    color: #b973bd;
     font-size: 14px;
     position: absolute;
     top: 100%;
@@ -781,9 +786,11 @@ h1 {
     white-space: nowrap;
     min-width: 60px;
     text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: lighter;
 }
 
-@keyframes fadeIn {
+/* @keyframes fadeIn {
     from {
         opacity: 0;
         transform: translateX(-50%) translateY(-5px);
@@ -792,7 +799,7 @@ h1 {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
     }
-}
+} */
 
 .no-data {
     text-align: center;

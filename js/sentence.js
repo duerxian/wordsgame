@@ -279,29 +279,17 @@ function renderArticleContent(article) {
     attachWordClickEvents();
 }
 
-// 将文本按句子分割（以句号、问号、感叹号、换行符为分隔符）
+// 将文本按句子分割（只按换行符分割，不按标点分割）
 function splitIntoSentences(text) {
     if (!text) return [];
     
-    // 首先按换行符分割
+    // 只按换行符分割，保留每一行的完整内容
     const lines = text.split(/\n/);
     const sentences = [];
     
-    // 对每一行，再按句子结束标点分割
     lines.forEach(line => {
         line = line.trim();
-        if (!line) return;
-        
-        // 按英文或中文的句子结束标点分割，但保留标点符号
-        const matches = line.match(/[^.!?。！？]+[.!?。！？]+|[^.!?。！？]+$/g);
-        if (matches) {
-            matches.forEach(match => {
-                const trimmed = match.trim();
-                if (trimmed) {
-                    sentences.push(trimmed);
-                }
-            });
-        } else {
+        if (line) {
             sentences.push(line);
         }
     });
@@ -354,7 +342,26 @@ async function handleWordClick(e) {
     wordElement.classList.add('word-active');
     
     // 获取翻译并显示
-    const translation = await getWordTranslation(word);
+    let translation;
+    if (e.ctrlKey) {
+        // CTRL+左键直接调用翻译API并覆盖缓存
+        console.log(`🔄 强制调用API翻译: ${word}`);
+        translation = await translateWithAPI(word);
+        if (translation) {
+            // 更新本地单词数据
+            const localWord = words.find(w => w.word.toLowerCase() === word.toLowerCase());
+            if (localWord) {
+                localWord.meaning = translation;
+            } else {
+                words.push({ word: word, meaning: translation });
+            }
+        } else {
+            translation = '暂无翻译';
+        }
+    } else {
+        // 正常流程，优先本地缓存
+        translation = await getWordTranslation(word);
+    }
     showWordTranslation(wordElement, translation);
 }
 
@@ -370,7 +377,7 @@ function speakWord(word) {
     const msg = new SpeechSynthesisUtterance();
     msg.text = word;
     msg.lang = 'zh-CN'; // 设置为美式英语
-    msg.rate = 0.8; // 语速稍慢，便于学习
+    msg.rate = 0.6; // 语速稍慢，便于学习
     msg.pitch = 1;
 
     // 核心：Chrome 必须等语音加载完成
