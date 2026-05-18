@@ -3,6 +3,16 @@ let originalArticles = []; // 存储原始文章数据
 let currentSelectedArticle = null;
 let words = []; // 存储单词数据用于翻译查询
 
+// ⭐ 文章列表分页配置
+let currentArticleListPage = 1;
+const ITEMS_PER_PAGE = 8; // 每页显示的文章数量
+let totalArticleListPages = 1;
+
+// ⭐ 文章内容分页功能
+let currentArticlePage = 1;
+let totalArticlePages = 1;
+const ARTICLE_CONTENT_HEIGHT_LIMIT = 450; // 内容高度限制(像素)
+
 // 加载本地Excel文件
 async function loadLocalExcel() {
     try {
@@ -169,32 +179,154 @@ async function loadArticles() {
     }
 }
 
+// 渲染文章列表
 function renderArticles(dataToRender = articles) {
     const container = document.getElementById('normalWordContainer');
     container.innerHTML = '';
     
     if (dataToRender.length === 0) {
-        container.innerHTML = '<div class="no-data">没有文章</div>';
+        container.innerHTML = '<div class="no-data">没有符合条件的文章</div>';
+        hideArticleListPagination();
         return;
     }
     
-    dataToRender.forEach(article => {
+    // 计算总页数
+    totalArticleListPages = Math.ceil(dataToRender.length / ITEMS_PER_PAGE);
+    
+    // 确保当前页在有效范围内
+    if (currentArticleListPage > totalArticleListPages) {
+        currentArticleListPage = totalArticleListPages;
+    }
+    if (currentArticleListPage < 1) {
+        currentArticleListPage = 1;
+    }
+    
+    // 计算当前页要显示的文章
+    const start = (currentArticleListPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    const pageArticles = dataToRender.slice(start, end);
+    
+    // 渲染当前页的文章
+    pageArticles.forEach(article => {
         const articleCard = document.createElement('div');
-        articleCard.className = 'word-card full-width';
+        articleCard.className = `word-card full-width ${article.check ? 'checked' : ''}`;
         articleCard.dataset.id = article.id;
         
+        // 文章列表始终显示英文标题，不受语言筛选影响
         const displayText = article.title || '';
         
         articleCard.innerHTML = `
             <span class="word-text">${displayText}</span>
+            <input type="checkbox" class="check-box" onchange="toggleKill(${article.id})" ${article.kill ? 'checked' : ''}>
+            <input type="checkbox" class="check-box" onchange="toggleCheckStatus(${article.id})" ${article.check ? 'checked' : ''}>
+            <div class="edit-btn" onclick="editArticle(${article.id})" title="编辑文章">✏️</div>
         `;
         
-        articleCard.addEventListener('click', () => {
-            showArticleContent(article);
+        articleCard.addEventListener('click', (e) => {
+            // 防止点击复选框和编辑按钮时触发文章内容显示
+            if (!e.target.closest('.check-box') && !e.target.closest('.edit-btn')) {
+                showArticleContent(article);
+            }
         });
         
         container.appendChild(articleCard);
     });
+    
+    // 显示分页控件
+    showArticleListPagination();
+}
+
+// 渲染分页控件
+function renderPagination(totalPages) {
+    const paginationContainer = document.getElementById('paginationContainer');
+    if (!paginationContainer) return;
+    
+    // 如果只有一页或没有数据，隐藏分页
+    if (totalPages <= 1) {
+        paginationContainer.style.display = 'none';
+        return;
+    }
+    
+    paginationContainer.style.display = 'flex';
+    paginationContainer.innerHTML = '';
+    
+    // 首页按钮
+    const firstPageBtn = createPageButton('首页', 1);
+    paginationContainer.appendChild(firstPageBtn);
+    
+    // 上一页按钮
+    const prevPageBtn = createPageButton('上一页', currentArticleListPage - 1);
+    prevPageBtn.disabled = currentArticleListPage === 1;
+    paginationContainer.appendChild(prevPageBtn);
+    
+    // 页码按钮
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentArticleListPage - Math.floor(maxVisiblePages / 2));
+    let endPage = startPage + maxVisiblePages - 1;
+    
+    if (endPage > totalPages) {
+        endPage = totalPages;
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // 省略号（如果需要）
+    if (startPage > 1) {
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'pagination-ellipsis';
+        ellipsis.textContent = '...';
+        paginationContainer.appendChild(ellipsis);
+    }
+    
+    // 添加页码按钮
+    for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = createPageButton(i.toString(), i);
+        if (i === currentArticleListPage) {
+            pageBtn.classList.add('active');
+        }
+        paginationContainer.appendChild(pageBtn);
+    }
+    
+    // 省略号（如果需要）
+    if (endPage < totalPages) {
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'pagination-ellipsis';
+        ellipsis.textContent = '...';
+        paginationContainer.appendChild(ellipsis);
+    }
+    
+    // 下一页按钮
+    const nextPageBtn = createPageButton('下一页', currentArticleListPage + 1);
+    nextPageBtn.disabled = currentArticleListPage === totalPages;
+    paginationContainer.appendChild(nextPageBtn);
+    
+    // 尾页按钮
+    const lastPageBtn = createPageButton('尾页', totalPages);
+    paginationContainer.appendChild(lastPageBtn);
+}
+
+// 创建分页按钮
+function createPageButton(text, pageNum) {
+    const button = document.createElement('button');
+    button.className = 'pagination-btn';
+    button.textContent = text;
+    button.dataset.page = pageNum;
+    
+    button.addEventListener('click', () => {
+        goToPage(pageNum);
+    });
+    
+    return button;
+}
+
+// 跳转到指定页
+function goToPage(pageNum) {
+    const totalPages = Math.ceil(articles.length / ITEMS_PER_PAGE);
+    if (pageNum < 1 || pageNum > totalPages || pageNum === currentArticleListPage) {
+        return;
+    }
+    
+    currentArticleListPage = pageNum;
+    renderArticles();
 }
 
 function applyFilters() {
@@ -239,6 +371,7 @@ function applyFilters() {
     }
     
     articles = filteredArticles;
+    currentArticleListPage = 1; // 筛选后回到第一页
     renderArticles(filteredArticles);
 }
 
@@ -263,51 +396,333 @@ function searchSentences() {
     });
     
     articles = results;
+    currentArticleListPage = 1; // 搜索后回到第一页
     renderArticles(results);
 }
 
 function showArticleContent(article) {
     currentSelectedArticle = article;
+    currentArticlePage = 1; // 查看新文章时回到第一页
+    renderArticleContentPage(article);
+}
+
+// 渲染文章内容分页
+function renderArticleContentPage(article) {
     const contentContainer = document.getElementById('killWordContainer');
     
+    // 准备所有内容段落 - 按段落分割，保留中英文对应关系
+    let allParagraphs = [];
+    
+    // 处理英文和中文内容，确保段落对应
+    if (article.english && article.meaning) {
+        const englishParagraphs = article.english.split(/\n+/).filter(p => p.trim());
+        const chineseParagraphs = article.meaning.split(/\n+/).filter(p => p.trim());
+        
+        // 配对中英文段落
+        const maxLength = Math.max(englishParagraphs.length, chineseParagraphs.length);
+        for (let i = 0; i < maxLength; i++) {
+            if (i < englishParagraphs.length) {
+                allParagraphs.push({
+                    type: 'english',
+                    content: englishParagraphs[i]
+                });
+            }
+            if (i < chineseParagraphs.length) {
+                allParagraphs.push({
+                    type: 'chinese',
+                    content: chineseParagraphs[i]
+                });
+            }
+        }
+    } else if (article.english) {
+        // 只有英文内容
+        const englishParagraphs = article.english.split(/\n+/).filter(p => p.trim());
+        englishParagraphs.forEach(p => {
+            allParagraphs.push({
+                type: 'english',
+                content: p
+            });
+        });
+    } else if (article.meaning) {
+        // 只有中文内容
+        const chineseParagraphs = article.meaning.split(/\n+/).filter(p => p.trim());
+        chineseParagraphs.forEach(p => {
+            allParagraphs.push({
+                type: 'chinese',
+                content: p
+            });
+        });
+    } else if (article.content) {
+        // 只有普通内容
+        const contentParagraphs = article.content.split(/\n+/).filter(p => p.trim());
+        contentParagraphs.forEach(p => {
+            allParagraphs.push({
+                type: 'content',
+                content: p
+            });
+        });
+    }
+    
+        // 渲染内容
     let contentHtml = `<div class="article-content"><h3>${article.title || ''}</h3>`;
     
-    if (article.english) {
-        const clickableText = makeWordsClickable(article.english);
-        contentHtml += `<div class="english-content">${clickableText}</div>`;
-    }
-    
-    if (article.meaning) {
-        // 将文本按换行符分割成句子
-        const sentences = article.meaning.split(/\n+/);
-        // 为每个句子创建<p>标签
-        const meaningWithBreaks = sentences.map(sentence => {
-            if (!sentence.trim()) return '';
-            return `<p>${sentence}</p>`;
-        }).join('');
-        contentHtml += `<div class="chinese-content">${meaningWithBreaks}</div>`;
-    }
-    
-    if (!article.english && !article.meaning && article.content) {
-        // 将文本按换行符分割成句子
-        const sentences = article.content.split(/\n+/);
-        // 为每个句子创建<p>标签
-        const contentWithBreaks = sentences.map(sentence => {
-            if (!sentence.trim()) return '';
-            return `<p>${sentence}</p>`;
-        }).join('');
-        contentHtml += `<div class="content">${contentWithBreaks}</div>`;
-    }
+    allParagraphs.forEach(paragraph => {
+        if (paragraph.type === 'english') {
+            const clickableText = makeWordsClickable(paragraph.content);
+            contentHtml += `<div class="english-content">${clickableText}</div>`;
+        } else if (paragraph.type === 'chinese') {
+            contentHtml += `<div class="chinese-content"><p>${paragraph.content}</p></div>`;
+        } else {
+            contentHtml += `<div class="content"><p>${paragraph.content}</p></div>`;
+        }
+    });
     
     // 添加朗读控制按钮
     contentHtml += `
         <div class="voice-control-container">
             <button class="read-btn" onclick="toggleRead()">朗读 🔊</button>
-        </div>
-    </div>`;
+        </div>`;
+    
+    contentHtml += `</div>`;
     contentContainer.innerHTML = contentHtml;
     
     attachWordClickEvents();
+    
+    // 延迟检查,确保DOM已完全渲染
+    setTimeout(() => {
+        checkAndInitPagination();
+    }, 100);
+}
+
+
+
+// 检查并初始化分页
+function checkAndInitPagination() {
+    const contentContainer = document.getElementById('killWordContainer');
+    if (!contentContainer) return;
+    
+    // 获取内容区域的实际渲染高度
+    const contentHeight = contentContainer.scrollHeight;
+    
+    console.log(`📏 内容区域高度: ${contentHeight}px, 限制: ${ARTICLE_CONTENT_HEIGHT_LIMIT}px`);
+    
+    // 如果高度超过限制,启用分页
+    if (contentHeight > ARTICLE_CONTENT_HEIGHT_LIMIT) {
+        initArticlePagination();
+    } else {
+        // 隐藏分页控件
+        hidePagination();
+    }
+}
+
+// 初始化文章分页
+function initArticlePagination() {
+    const contentContainer = document.getElementById('killWordContainer');
+    if (!contentContainer) return;
+    
+    const articleContent = contentContainer.querySelector('.article-content');
+    if (!articleContent) return;
+    
+    // 获取所有段落元素
+    const paragraphs = Array.from(articleContent.querySelectorAll('.english-content, .chinese-content, .content'));
+    
+    if (paragraphs.length === 0) {
+        hidePagination();
+        return;
+    }
+    
+    // 计算每页可以显示多少个段落
+    const containerHeight = ARTICLE_CONTENT_HEIGHT_LIMIT;
+    const paragraphHeight = paragraphs[0].offsetHeight || 30; // 默认每个段落30px
+    const paragraphsPerPage = Math.floor(containerHeight / paragraphHeight);
+    
+    if (paragraphsPerPage <= 0) {
+        hidePagination();
+        return;
+    }
+    
+    // 计算总页数
+    totalArticlePages = Math.ceil(paragraphs.length / paragraphsPerPage);
+    currentArticlePage = 1;
+    
+    console.log(`📄 分页信息 - 总段落数: ${paragraphs.length}, 每页显示: ${paragraphsPerPage}, 总页数: ${totalArticlePages}`);
+    
+    // 存储段落数据供后续使用
+    window.articleParagraphs = paragraphs;
+    window.paragraphsPerPage = paragraphsPerPage;
+    
+    // 渲染第一页
+    renderArticlePage(currentArticlePage);
+    
+    // 显示分页控件
+    showPagination();
+}
+
+// 渲染指定页的文章内容
+function renderArticlePage(pageNum) {
+    if (!window.articleParagraphs || !window.paragraphsPerPage) return;
+    
+    const start = (pageNum - 1) * window.paragraphsPerPage;
+    const end = start + window.paragraphsPerPage;
+    const pageParagraphs = window.articleParagraphs.slice(start, end);
+    
+    const contentContainer = document.getElementById('killWordContainer');
+    const articleContent = contentContainer.querySelector('.article-content');
+    
+    if (!articleContent) return;
+    
+    // 保留标题,只替换内容部分
+    const title = articleContent.querySelector('h3');
+    const voiceControl = articleContent.querySelector('.voice-control-container');
+    
+    // 创建新的内容容器
+    const newContent = document.createElement('div');
+    
+    // 添加当前页的段落
+    pageParagraphs.forEach(p => {
+        newContent.appendChild(p.cloneNode(true));
+    });
+    
+    // 清空现有内容,添加标题和新内容
+    articleContent.innerHTML = '';
+    articleContent.appendChild(title);
+    
+    // 添加新内容
+    while (newContent.firstChild) {
+        articleContent.appendChild(newContent.firstChild);
+    }
+    
+    // 添加朗读控制按钮
+    articleContent.appendChild(voiceControl);
+    
+    // 重新绑定单词点击事件
+    attachWordClickEvents();
+    
+    // 更新分页UI
+    updateArticlePaginationUI();
+}
+
+// 显示分页控件
+function showPagination() {
+    const pagination = document.getElementById('articlePagination');
+    if (pagination) {
+        pagination.style.display = 'flex';
+        
+        // 设置输入框的最大值
+        const pageInput = document.getElementById('articlePageInput');
+        if (pageInput) {
+            pageInput.max = totalArticlePages;
+        }
+    }
+}
+
+// 隐藏分页控件
+function hidePagination() {
+    const pagination = document.getElementById('articlePagination');
+    if (pagination) {
+        pagination.style.display = 'none';
+    }
+}
+
+// 更新分页UI
+function updateArticlePaginationUI() {
+    const pageNumbersContainer = document.getElementById('articlePageNumbers');
+    if (!pageNumbersContainer) return;
+    
+    let html = '';
+    
+    // 根据总页数决定显示方式
+    if (totalArticlePages <= 7) {
+        // 页数少,全部显示
+        for (let i = 1; i <= totalArticlePages; i++) {
+            html += `<button onclick="goArticlePage(${i})" class="${i === currentArticlePage ? 'active' : ''}">${i}</button>`;
+        }
+    } else {
+        // 页数多,智能省略显示
+        if (currentArticlePage <= 3) {
+            // 当前页在前面
+            for (let i = 1; i <= 4; i++) {
+                html += `<button onclick="goArticlePage(${i})" class="${i === currentArticlePage ? 'active' : ''}">${i}</button>`;
+            }
+            html += `<span class="ellipsis">...</span>`;
+            html += `<button onclick="goArticlePage(${totalArticlePages})">${totalArticlePages}</button>`;
+        } else if (currentArticlePage >= totalArticlePages - 2) {
+            // 当前页在后面
+            html += `<button onclick="goArticlePage(1)">1</button>`;
+            html += `<span class="ellipsis">...</span>`;
+            for (let i = totalArticlePages - 3; i <= totalArticlePages; i++) {
+                html += `<button onclick="goArticlePage(${i})" class="${i === currentArticlePage ? 'active' : ''}">${i}</button>`;
+            }
+        } else {
+            // 当前页在中间
+            html += `<button onclick="goArticlePage(1)">1</button>`;
+            html += `<span class="ellipsis">...</span>`;
+            for (let i = currentArticlePage - 1; i <= currentArticlePage + 1; i++) {
+                html += `<button onclick="goArticlePage(${i})" class="${i === currentArticlePage ? 'active' : ''}">${i}</button>`;
+            }
+            html += `<span class="ellipsis">...</span>`;
+            html += `<button onclick="goArticlePage(${totalArticlePages})">${totalArticlePages}</button>`;
+        }
+    }
+    
+    pageNumbersContainer.innerHTML = html;
+}
+
+// 跳转到指定页
+function goArticlePage(pageNum) {
+    if (pageNum < 1 || pageNum > totalArticlePages) return;
+    
+    // 翻页时停止朗读
+    if (reader) {
+        reader.stop();
+        updateReadButton();
+    }
+    
+    currentArticlePage = pageNum;
+    renderArticlePage(currentArticlePage);
+}
+
+// 通过输入框跳转
+function jumpToArticlePage() {
+    const pageInput = document.getElementById('articlePageInput');
+    if (!pageInput) return;
+    
+    const pageNum = parseInt(pageInput.value);
+    if (isNaN(pageNum)) return;
+    
+    goArticlePage(pageNum);
+    
+    // 清空输入框
+    pageInput.value = '';
+}
+
+// 监听回车键跳转
+document.addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') {
+        const pageInput = document.getElementById('articlePageInput');
+        if (pageInput && document.activeElement === pageInput) {
+            jumpToArticlePage();
+        }
+    }
+});
+
+// 获取文章总段落数
+function getTotalParagraphs(article) {
+    let count = 0;
+    
+    if (article.english) {
+        count += article.english.split(/\n+/).filter(p => p.trim()).length;
+    }
+    
+    if (article.meaning) {
+        count += article.meaning.split(/\n+/).filter(p => p.trim()).length;
+    }
+    
+    if (!article.english && !article.meaning && article.content) {
+        count += article.content.split(/\n+/).filter(p => p.trim()).length;
+    }
+    
+    return count;
 }
 
 function makeWordsClickable(text) {
@@ -668,6 +1083,109 @@ function toggleRead() {
         reader.toggle(contentContainer);
     }
 }
+
+// ⭐ 文章列表分页功能
+
+// 显示文章列表分页控件
+function showArticleListPagination() {
+    const pagination = document.getElementById('articleListPagination');
+    if (pagination) {
+        pagination.style.display = 'flex';
+        
+        // 设置输入框的最大值
+        const pageInput = document.getElementById('articleListPageInput');
+        if (pageInput) {
+            pageInput.max = totalArticleListPages;
+        }
+        
+        // 更新分页UI
+        updateArticleListPaginationUI();
+    }
+}
+
+// 隐藏文章列表分页控件
+function hideArticleListPagination() {
+    const pagination = document.getElementById('articleListPagination');
+    if (pagination) {
+        pagination.style.display = 'none';
+    }
+}
+
+// 更新文章列表分页UI
+function updateArticleListPaginationUI() {
+    const pageNumbersContainer = document.getElementById('articleListPageNumbers');
+    if (!pageNumbersContainer) return;
+    
+    let html = '';
+    
+    // 根据总页数决定显示方式
+    if (totalArticleListPages <= 7) {
+        // 页数少,全部显示
+        for (let i = 1; i <= totalArticleListPages; i++) {
+            html += `<button onclick="goArticleListPage(${i})" class="${i === currentArticleListPage ? 'active' : ''}">${i}</button>`;
+        }
+    } else {
+        // 页数多,智能省略显示
+        if (currentArticleListPage <= 3) {
+            // 当前页在前面
+            for (let i = 1; i <= 4; i++) {
+                html += `<button onclick="goArticleListPage(${i})" class="${i === currentArticleListPage ? 'active' : ''}">${i}</button>`;
+            }
+            html += `<span class="ellipsis">...</span>`;
+            html += `<button onclick="goArticleListPage(${totalArticleListPages})">${totalArticleListPages}</button>`;
+        } else if (currentArticleListPage >= totalArticleListPages - 2) {
+            // 当前页在后面
+            html += `<button onclick="goArticleListPage(1)">1</button>`;
+            html += `<span class="ellipsis">...</span>`;
+            for (let i = totalArticleListPages - 3; i <= totalArticleListPages; i++) {
+                html += `<button onclick="goArticleListPage(${i})" class="${i === currentArticleListPage ? 'active' : ''}">${i}</button>`;
+            }
+        } else {
+            // 当前页在中间
+            html += `<button onclick="goArticleListPage(1)">1</button>`;
+            html += `<span class="ellipsis">...</span>`;
+            for (let i = currentArticleListPage - 1; i <= currentArticleListPage + 1; i++) {
+                html += `<button onclick="goArticleListPage(${i})" class="${i === currentArticleListPage ? 'active' : ''}">${i}</button>`;
+            }
+            html += `<span class="ellipsis">...</span>`;
+            html += `<button onclick="goArticleListPage(${totalArticleListPages})">${totalArticleListPages}</button>`;
+        }
+    }
+    
+    pageNumbersContainer.innerHTML = html;
+}
+
+// 跳转到指定页
+function goArticleListPage(pageNum) {
+    if (pageNum < 1 || pageNum > totalArticleListPages) return;
+    
+    currentArticleListPage = pageNum;
+    renderArticles(articles);
+}
+
+// 通过输入框跳转
+function jumpToArticleListPage() {
+    const pageInput = document.getElementById('articleListPageInput');
+    if (!pageInput) return;
+    
+    const pageNum = parseInt(pageInput.value);
+    if (isNaN(pageNum)) return;
+    
+    goArticleListPage(pageNum);
+    
+    // 清空输入框
+    pageInput.value = '';
+}
+
+// 监听回车键跳转
+document.addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') {
+        const pageInput = document.getElementById('articleListPageInput');
+        if (pageInput && document.activeElement === pageInput) {
+            jumpToArticleListPage();
+        }
+    }
+});
 
 document.addEventListener('DOMContentLoaded', function() {
     loadLocalExcel();

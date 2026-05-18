@@ -207,7 +207,7 @@ class ReadSentence {
                 if (/[。！？.!?]/.test(lastChar)) {
                     pauseTime = 600; // 句末标点，停顿稍长
                 } else if (/[，,；;：:]/.test(lastChar)) {
-                    pauseTime = 400// 逗号、分号等，停顿较短
+                    pauseTime = 200// 逗号、分号等，停顿较短
                 }
                 
                 console.log(`📢 句子结尾字符: "${lastChar}"，停顿 ${pauseTime}ms 后朗读下一句`);
@@ -254,43 +254,47 @@ class ReadSentence {
         // 首先尝试找到文章内容容器
         const articleContent = containerElement.querySelector('.article-content');
         if (articleContent) {
-            // 从文章内容容器中获取英文和中文内容
-            const englishContent = articleContent.querySelector('.english-content');
-            if (englishContent) {
-                const text = englishContent.textContent.trim();
-                if (text && !text.includes('暂无英文')) {
-                    texts.push(text);
-                }
-            }
-            
-            const chineseContent = articleContent.querySelector('.chinese-content');
-            if (chineseContent) {
-                const text = chineseContent.textContent.trim();
-                if (text && !text.includes('暂无中文')) {
-                    texts.push(text);
-                }
-            }
-        }
-        
-        // 如果上面没找到，尝试其他方式
-        if (texts.length === 0) {
-            // 同时查找 p 和 div 标签
-            const elements = containerElement.querySelectorAll('p, .sentence-line, .english-content, .chinese-content, .article-content');
-            
-            elements.forEach(el => {
-                // 跳过可点击单词的span元素，直接获取父元素的文本
-                const text = el.textContent.trim();
+            // 从文章内容容器中获取所有段落
+            const paragraphs = articleContent.querySelectorAll('p, .sentence-line');
+            if (paragraphs.length > 0) {
+                paragraphs.forEach(p => {
+                    const text = p.textContent.trim();
+                    if (text && !text.includes('暂无内容') && !text.includes('暂无英文') && !text.includes('暂无中文')) {
+                        texts.push(text);
+                    }
+                });
+            } else {
+                // 如果没有段落，直接获取文章内容
+                const text = articleContent.textContent.trim();
                 if (text && !text.includes('暂无内容') && !text.includes('暂无英文') && !text.includes('暂无中文')) {
                     texts.push(text);
                 }
+            }
+        } else {
+            // 尝试获取当前页所有可见的文本内容
+            const pageElements = containerElement.querySelectorAll('p, div, span, .sentence-line, .english-content, .chinese-content');
+            
+            pageElements.forEach(el => {
+                // 跳过按钮、输入框、标题等非内容元素
+                if (el.tagName === 'BUTTON' || el.tagName === 'INPUT' || el.tagName === 'SELECT' || 
+                    el.classList.contains('nav') || el.classList.contains('controls') || 
+                    el.classList.contains('filter-controls') || el.classList.contains('stats') ||
+                    el.classList.contains('page-controls')) {
+                    return;
+                }
+                
+                const text = el.textContent.trim();
+                if (text && !text.includes('暂无内容') && !text.includes('暂无英文') && !text.includes('暂无中文') && text.length > 10) {
+                    texts.push(text);
+                }
             });
-        }
-        
-        // 如果还是没找到，直接获取整个容器的文本
-        if (texts.length === 0) {
-            const fullText = containerElement.textContent.trim();
-            if (fullText && !fullText.includes('暂无内容') && !fullText.includes('暂无英文') && !fullText.includes('暂无中文')) {
-                texts.push(fullText);
+            
+            // 如果还是没找到，直接获取整个容器的文本
+            if (texts.length === 0) {
+                const fullText = containerElement.textContent.trim();
+                if (fullText && !fullText.includes('暂无内容') && !fullText.includes('暂无英文') && !fullText.includes('暂无中文')) {
+                    texts.push(fullText);
+                }
             }
         }
         

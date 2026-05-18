@@ -101,16 +101,48 @@
         </div>
 
         <div class="word-container">
-            <div class="word-section">
-                <h2>文章列表</h2>
-                <div class="word-list" id="normalWordContainer">
-                    <div class="loading">加载中...</div>
+            <div class="word-section article-section">
+                <div class="two-section-updown">
+                    <h2>文章列表</h2>
+                    <div class="word-list" id="normalWordContainer">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+                <!-- ⭐ 文章列表分页控件 -->
+                <div class="two-section-updown">
+                    <div class="pagination" id="articleListPagination" style="display: none;">
+                        <button onclick="goArticleListPage(1)" title="首页">«</button>
+                        <button onclick="goArticleListPage(currentArticleListPage - 1)" title="上一页">&lt;</button>
+                        <span id="articleListPageNumbers"></span>
+                        <button onclick="goArticleListPage(currentArticleListPage + 1)" title="下一页">&gt;</button>
+                        <button onclick="goArticleListPage(totalArticleListPages)" title="尾页">»</button>
+                        <div class="jump-box">
+                            <input type="number" id="articleListPageInput" placeholder="页码" min="1" max="1">
+                            <button onclick="jumpToArticleListPage()">前往</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="word-section">
-                <h2>文章内容</h2>
-                <div class="word-list" id="killWordContainer">
-                    <div class="loading">加载中...</div>
+            <div class="word-section article-section">
+                <div class="two-section-updown">
+                    <h2>文章内容</h2>
+                    <div class="word-list" id="killWordContainer">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+                <!-- ⭐ 分页控件 -->
+                <div class="two-section-updown">
+                    <div class="pagination" id="articlePagination" style="display: none;">
+                        <button onclick="goArticlePage(1)" title="首页">«</button>
+                        <button onclick="goArticlePage(currentArticlePage - 1)" title="上一页">&lt;</button>
+                        <span id="articlePageNumbers"></span>
+                        <button onclick="goArticlePage(currentArticlePage + 1)" title="下一页">&gt;</button>
+                        <button onclick="goArticlePage(totalArticlePages)" title="尾页">»</button>
+                        <div class="jump-box">
+                            <input type="number" id="articlePageInput" placeholder="页码" min="1" max="1">
+                            <button onclick="jumpToArticlePage()">前往</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
