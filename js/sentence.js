@@ -299,7 +299,12 @@ function showArticleContent(article) {
         contentHtml += `<div class="content">${contentWithBreaks}</div>`;
     }
     
-    contentHtml += `</div>`;
+    // 添加朗读控制按钮
+    contentHtml += `
+        <div class="voice-control-container">
+            <button class="read-btn" onclick="toggleRead()">朗读 🔊</button>
+        </div>
+    </div>`;
     contentContainer.innerHTML = contentHtml;
     
     attachWordClickEvents();
@@ -602,7 +607,70 @@ async function loadWords() {
     }
 }
 
+// 创建朗读实例
+let reader;
+
+// 初始化朗读功能
+function initReader() {
+    reader = new ReadSentence({
+        rate: 0.8,
+        onStateChange: () => {
+            updateReadButton();
+        },
+        onEnd: () => {
+            updateReadButton();
+        },
+        onError: () => {
+            updateReadButton();
+        }
+    });
+    
+    // 初始化语音控制面板
+    reader.initVoiceControls('voiceSelect', 'rateControl', 'rateText');
+    
+    // 语速和音色变化时重新朗读
+    document.getElementById('rateControl').addEventListener('input', () => {
+        if (reader.getState() === 'playing' || reader.getState() === 'paused') {
+            restartReading();
+        }
+    });
+    
+    document.getElementById('voiceSelect').addEventListener('change', () => {
+        if (reader.getState() === 'playing' || reader.getState() === 'paused') {
+            restartReading();
+        }
+    });
+}
+
+// 重新开始朗读（使用新配置）
+function restartReading() {
+    const contentContainer = document.getElementById('killWordContainer');
+    if (contentContainer && reader) {
+        reader.stop();
+        setTimeout(() => {
+            reader.speakFromContainer(contentContainer);
+        }, 50);
+    }
+}
+
+// 更新朗读按钮文本
+function updateReadButton() {
+    const readBtn = document.querySelector('.read-btn');
+    if (readBtn && reader) {
+        readBtn.textContent = reader.getButtonText();
+    }
+}
+
+// 切换朗读/暂停
+function toggleRead() {
+    const contentContainer = document.getElementById('killWordContainer');
+    if (contentContainer && reader) {
+        reader.toggle(contentContainer);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     loadLocalExcel();
     loadWords(); // 同时加载单词表
+    initReader();
 });

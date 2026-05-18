@@ -50,6 +50,91 @@ body {
     color: #ffcc44; 
 }
 
+/* 筛选控件样式 */
+.filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    padding: 15px;
+    background: #fff;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.filter-group label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #333;
+}
+
+.filter-group select {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    background: #fff;
+}
+
+/* 语音控制面板样式 */
+.voice-control-wrapper {
+    margin-left: auto;
+}
+
+.voice-control {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    font-size: 12px;
+}
+
+.voice-control label {
+    font-size: 12px;
+    margin-right: 5px;
+    color: #555;
+}
+
+.voice-control select, .voice-control input {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    font-size: 12px;
+}
+
+.voice-control input[type="range"] {
+    width: 100px;
+}
+
+.read-btn {
+    background-color: #28a745 !important;
+    color: white !important;
+    font-weight: bold;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 10px;
+    font-size: 14px;
+}
+
+.read-btn:hover {
+    background-color: #218838 !important;
+}
+
+.voice-control-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+}
+
 .tab:hover {
     color: rgb(255, 212, 119);
 }
@@ -243,7 +328,7 @@ h1 {
 }
 
 .filter-group label {
-    font-size: 14px;
+    font-size: 13px;
     color: #666;
     white-space: nowrap;
 }
@@ -252,7 +337,7 @@ h1 {
     padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 12px;
     background-color: white;
     cursor: pointer;
 }

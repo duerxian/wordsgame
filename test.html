@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章分页朗读-单键启停+语速音色音量可调</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background: #f5f7fa;
+            padding: 20px;
+            color: #333;
+        }
+        .article-box {
+            max-width: 900px;
+            margin: 30px auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .article-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #222;
+        }
+        .page-content {
+            font-size: 16px;
+            line-height: 1.8;
+            min-height: 320px;
+            margin-bottom: 30px;
+            padding: 10px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .page-content p {
+            margin-bottom: 16px;
+            text-indent: 2em;
+        }
+        /* .page-content.reading {
+            background-color: #f0f7ff;
+            border-left: 4px solid #2d8cf0;
+        } */
+        /* 分页容器 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .pagination button {
+            padding: 7px 14px;
+            border: 1px solid #ddd;
+            background: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .pagination button:hover:not(:disabled) {
+            background: #2d8cf0;
+            color: #fff;
+            border-color: #2d8cf0;
+        }
+        .pagination button.active {
+            background: #2d8cf0;
+            color: #fff;
+            border-color: #2d8cf0;
+            font-weight: bold;
+        }
+        .pagination .ellipsis {
+            padding: 7px 10px;
+            color: #999;
+        }
+        /* 跳页输入框 */
+        .jump-box {
+            display: flex;
+            align-items: center;
+            margin-left: 10px;
+            gap: 5px;
+        }
+        .jump-box input {
+            width: 60px;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 14px;
+        }
+        /* 语音控制面板 */
+        .voice-control {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+        .voice-control label {
+            font-size: 14px;
+            margin-right: 5px;
+        }
+        .voice-control select, .voice-control input {
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .read-btn {
+            background-color: #28a745 !important;
+            color: white !important;
+            font-weight: bold;
+        }
+        .status {
+            font-size: 14px;
+            color: #666;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="article-box">
+        <h2 class="article-title">宇树科技GD01载人机甲相关报道</h2>
+        <div id="contentContainer" class="page-content"></div>
+
+        <!-- 分页栏 -->
+        <div class="pagination" id="paginationWrap"></div>
+        
+        <!-- 语音控制面板 保留：音色/语速/音量 -->
+        <div class="voice-control" id="voicePanel" style="display:none;">
+            <label>音色：</label>
+            <select id="voiceSelect"></select>
+            
+            <label>语速：</label>
+            <input type="range" id="rateControl" min="0.5" max="2" step="0.1" value="0.8">
+            <span id="rateText">0.8x</span>
+
+        </div>
+    </div>
+
+<!-- 引入朗读模块 -->
+<script src="js/read_sentence.js"></script>
+<script>
+    // 文章原文
+    const article = `I think Mike described the basic appearance features of that person.
+    
+I respect and admire the person who has qualities like honesty, patience, confidence and courage.
+
+We respect, admire, trust, and support those people with strong confidence and courage.
+
+I think we can improve ourselves if we have positive thoughts and strong confidence.
+
+I did some personal surveys on these patients yesterday; however, I didn't survey all of them.
+
+宇树早期投资人赵楠在接受第一财经记者独家采访时表示：宇树一直在围绕它的科技树路线图做探索。机甲机器人的核心是通过一个容易破圈的场景向全世界表达了宇树在传感器、控制器和工程能力这些机器人核心技术上的优越性。与其它公司不同，宇树的产品本身的破圈性就是营销的引擎。
+
+宇树科技称，GD01是全球首款量产版载人机甲，可以变形，为民用交通工具，体重约500千克(载人后)。
+
+另据澎湃新闻，GD01采用高强度合金材料与精密伺服驱动系统，兼具坚固性与灵活性，可像人形机器人一样直立行走，上方设有载人舱位，人类可坐在内部操控椅上。
+
+实测视频显示，GD01一拳就能将砖墙锤倒。除了直立行走外，GD01还支持变形，机器人往后下压就可变身为四足状态，预计未来能够在文旅展示、特种作业、私人高端出行等领域落地应用。
+
+宇树科技今年持续发布新产品。4月30日，宇树科技微信公众号发布一款用于快速部署的双臂人形机器人产品，售价仅2.69万元起。据了解，该价格突破了行业普遍为十几万元至几十万元的双臂人形机器人售价。
+
+宇树早期投资人赵楠在接受第一财经记者独家采访时表示：宇树一直在围绕它的科技树路线图做探索。机甲机器人的核心是通过一个容易破圈的场景向全世界表达了宇树在传感器、控制器和工程能力这些机器人核心技术上的优越性。与其它公司不同，宇树的产品本身的破圈性就是营销的引擎。
+
+宇树科技称，GD01是全球首款量产版载人机甲，可以变形，为民用交通工具，体重约500千克(载人后)。
+
+关于390万元的售价及量产问题，宇树科技市场推广负责人黄嘉玮表示，这只是初步参考价格。“后续真正量产时，最终版本还会根据性能优化情况进行调整。”他坦言目前价格确实比较贵，并确认该机甲属于特殊型号，虽然具备大批量生产能力，但现阶段刚发布，功能优化和降低成本仍需要时间。
+
+据了解，该价格突破了行业普遍为十几万元至几十万元的双臂人形机器人售价。`;
+
+    // 配置项
+    const perPageNum = 3;
+    let currentPage = 1;
+    let totalPage = 1;
+    let paragraphList = [];
+
+    // 创建朗读实例
+    const reader = new ReadSentence({
+        onStateChange: () => {
+            renderPagination();
+        },
+        onEnd: () => {
+            renderPagination();
+        },
+        onError: () => {
+            renderPagination();
+        }
+    });
+
+    // 初始化文章
+    function initArticle() {
+        paragraphList = article.split('\n\n').filter(item => item.trim() !== '');
+        totalPage = Math.ceil(paragraphList.length / perPageNum);
+        renderPage();
+        renderPagination();
+        // 初始化语音控制面板
+        reader.initVoiceControls('voiceSelect', 'rateControl', 'rateText');
+        
+        // 语速和音色变化时重新朗读
+        document.getElementById('rateControl').addEventListener('input', () => {
+            if (reader.getState() === 'playing' || reader.getState() === 'paused') {
+                restartReading();
+            }
+        });
+        
+        document.getElementById('voiceSelect').addEventListener('change', () => {
+            if (reader.getState() === 'playing' || reader.getState() === 'paused') {
+                restartReading();
+            }
+        });
+    }
+
+    // 重新开始朗读（使用新配置）
+    function restartReading() {
+        const container = document.getElementById('contentContainer');
+        reader.stop();
+        setTimeout(() => {
+            reader.speakFromContainer(container);
+        }, 50);
+    }
+
+    // 渲染当前页内容
+    function renderPage() {
+        // 翻页强制停止朗读
+        reader.stop();
+        const start = (currentPage - 1) * perPageNum;
+        const end = start + perPageNum;
+        const currList = paragraphList.slice(start, end);
+        let html = '';
+        currList.forEach(p => {
+            html += `<p>${p.trim()}</p>`;
+        });
+        document.getElementById('contentContainer').innerHTML = html;
+    }
+
+    // 渲染分页 + 单个朗读切换按钮
+    function renderPagination() {
+        let html = '';
+        html += `<button onclick="goFirst()">首页</button>`;
+        html += `<button onclick="goPrev()">\<</button>`;
+
+        if (totalPage <= 5) {
+            for (let i = 1; i <= totalPage; i++) {
+                html += `<button onclick="goPage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+            }
+        } else {
+            if (currentPage <= 3) {
+                for (let i = 1; i <= 3; i++) {
+                    html += `<button onclick="goPage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+                }
+                html += `<span class="ellipsis">...</span>`;
+                html += `<button onclick="goPage(${totalPage})">${totalPage}</button>`;
+            } else if (currentPage >= totalPage - 2) {
+                html += `<button onclick="goPage(1)">1</button>`;
+                html += `<span class="ellipsis">...</span>`;
+                for (let i = totalPage - 2; i <= totalPage; i++) {
+                    html += `<button onclick="goPage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+                }
+            } else {
+                html += `<button onclick="goPage(1)">1</button>`;
+                html += `<span class="ellipsis">...</span>`;
+                for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+                    html += `<button onclick="goPage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+                }
+                html += `<span class="ellipsis">...</span>`;
+                html += `<button onclick="goPage(${totalPage})">${totalPage}</button>`;
+            }
+        }
+
+        html += `<button onclick="goNext()">\></button>`;
+        html += `<button onclick="goLast()">尾页</button>`;
+
+        html += `
+            <div class="jump-box">
+                <input type="number" id="pageInput" placeholder="页码" min="1" max="${totalPage}">
+                <button onclick="jumpToPage()">前往</button>
+            </div>
+        `;
+        // 单按钮：自动切换 朗读/暂停
+        html += `<button class="read-btn" onclick="toggleRead()">${reader.getButtonText()}</button>`;
+
+        document.getElementById('paginationWrap').innerHTML = html;
+    }
+
+    // 分页函数
+    function goPage(num) {
+        if (num < 1 || num > totalPage) return;
+        currentPage = num;
+        renderPage();
+        renderPagination();
+    }
+    function goFirst() { goPage(1); }
+    function goLast() { goPage(totalPage); }
+    function goPrev() { goPage(currentPage - 1); }
+    function goNext() { goPage(currentPage + 1); }
+    function jumpToPage() {
+        let val = parseInt(document.getElementById('pageInput').value);
+        if (!isNaN(val)) goPage(val);
+    }
+
+    // 回车跳转
+    document.addEventListener('keyup', e => {
+        if (e.key === 'Enter') jumpToPage();
+    });
+
+    // 单按钮 朗读/暂停/继续 切换核心
+    function toggleRead() {
+        const container = document.getElementById('contentContainer');
+        reader.toggle(container);
+    }
+
+    // 页面加载初始化
+    window.addEventListener('load', () => {
+        reader.loadVoices();
+        setTimeout(initArticle, 100);
+    });
+</script>
+</body>
+</html>
