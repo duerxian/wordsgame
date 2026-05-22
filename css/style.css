@@ -107,17 +107,6 @@ body {
     width: 100px;
 }
 
-.read-btn {
-    background-color: #0ecc3a !important;
-    color: white !important;
-    font-weight: bold;
-    padding: 8px 18px;
-    border-radius: 6px;
-    cursor: pointer;
-    margin: 10px;
-    font-size: 14px;
-}
-
 .read-btn:hover {
     background-color: #218838 !important;
 }
@@ -468,13 +457,14 @@ h1 {
 .read-btn {
     background-color: #28a745 !important;
     color: white !important;
-    font-weight: bold;
-    padding: 8px 18px;
+    padding: 6px 18px;
     border-radius: 6px;
     cursor: pointer;
     margin-left: 6px;
     font-size: 14px;
     white-space: nowrap;
+    border: none;
+
 }
 
 .read-btn:hover {
@@ -1023,8 +1013,8 @@ h1 {
 
 /* 文章内容区域样式 */
 .article-content {
-    padding: 20px;
-    line-height: 2;
+    padding: 0 20px;
+    line-height: 1.6;
     font-size: 20px;
 }
 

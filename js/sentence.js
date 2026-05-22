@@ -11,7 +11,7 @@ let totalArticleListPages = 1;
 // ⭐ 文章内容分页功能
 let currentArticlePage = 1;
 let totalArticlePages = 1;
-const ARTICLE_CONTENT_HEIGHT_LIMIT = 450; // 内容高度限制(像素)
+const ARTICLE_CONTENT_HEIGHT_LIMIT = 800; // 内容高度限制(像素)
 
 // 加载本地Excel文件
 async function loadLocalExcel() {
